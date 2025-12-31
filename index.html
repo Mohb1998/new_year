@@ -58,6 +58,7 @@
             display: none;
             z-index: 10;
             position: relative;
+            width: 100%; /* Ensure it fits width */
         }
 
         h1 {
@@ -177,11 +178,37 @@
             transform: translateX(0);
         }
 
+        /* --- MOBILE RESPONSIVENESS FIX --- */
         @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem; /* Make Headline Smaller */
+                letter-spacing: 2px;
+                margin-bottom: 15px;
+            }
+
+            .time-box {
+                margin: 5px; /* Reduce spacing between boxes */
+                padding: 10px; /* Reduce padding inside boxes */
+                min-width: 60px;
+            }
+
+            .time-box span {
+                font-size: 1.5rem; /* Make Numbers Smaller */
+            }
+
+            .label {
+                font-size: 0.8rem;
+            }
+
+            #ny-message {
+                font-size: 3rem; /* Make "Happy New Year" smaller on phone */
+            }
+
             #image-caption {
-                max-width: 70%;
-                font-size: 1.2rem;
-                padding: 20px 30px;
+                max-width: 80%;
+                font-size: 1.1rem;
+                padding: 15px 20px;
+                bottom: 5%;
             }
         }
     </style>
@@ -237,7 +264,7 @@
         const nextYear = new Date().getFullYear() + 1;
         const newYearTime = new Date(`January 01 ${nextYear} 00:00:00`);
         
-        // ** SET TO TRUE TO TEST INSTANTLY **
+        // ** SET TO TRUE TO TEST SLIDESHOW, FALSE TO SEE COUNTDOWN **
         const isTesting = false; 
 
         // CAPTIONS FOR EACH IMAGE
@@ -274,7 +301,6 @@
         
         let slideIndex = 0;
         let timerInterval;
-        let isAudioPlaying = false;
         
         // Flag to stop confetti
         let stopConfetti = false;
@@ -287,11 +313,16 @@
             timerInterval = setInterval(updateCountdown, 1000);
             updateCountdown(); 
 
-            audio.volume = 0.7;
+            // ** AUDIO FIX **
+            // We "prime" the audio on click so the browser allows it later,
+            // but we pause it immediately so it doesn't play during countdown.
+            audio.volume = 0.1;
             audio.play().then(() => {
-                isAudioPlaying = true;
+                audio.pause();
+                audio.currentTime = 0;
+                console.log("Audio primed and waiting for countdown...");
             }).catch(error => {
-                console.error("Audio play failed:", error);
+                console.error("Audio priming failed (browser might require interaction later):", error);
             });
         }
 
@@ -323,9 +354,18 @@
             countdownContainer.style.display = 'none';
             celebrationContainer.style.display = 'block';
 
-            if (!isAudioPlaying) {
-                audio.currentTime = 0;
-                audio.play();
+            // ** PLAY AUDIO NOW **
+            audio.volume = 0.7; // Set volume back up
+            audio.currentTime = 0;
+            var playPromise = audio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(_ => {
+                    console.log("Music started!");
+                })
+                .catch(error => {
+                    console.log("Auto-play prevented. User might need to click.");
+                });
             }
 
             if (typeof confetti === 'function') {
