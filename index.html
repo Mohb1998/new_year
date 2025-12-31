@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Year Countdown</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        /* --- CSS STYLING --- */
+        body {
+            margin: 0;
+            padding: 0;
+            background: #111;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        /* --- START SCREEN --- */
+        #start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #start-btn {
+            padding: 20px 40px;
+            font-size: 2rem;
+            background: #ff00de;
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 0, 222, 0.8);
+            transition: transform 0.2s;
+        }
+
+        #start-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* --- COUNTDOWN --- */
+        #countdown-container {
+            display: none;
+            z-index: 10;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        .time-box {
+            display: inline-block;
+            margin: 0 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+
+        .time-box span {
+            display: block;
+            font-size: 3rem;
+            font-weight: bold;
+        }
+
+        .label {
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        /* --- CELEBRATION --- */
+        #celebration-container {
+            display: none; 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+        }
+
+        #ny-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 30; 
+            font-size: 6rem;
+            color: gold;
+            text-shadow: 0 0 30px #ff00de;
+            width: 100%;
+            pointer-events: none; 
+            transition: opacity 2s ease-in-out; 
+            opacity: 1;
+        }
+
+        #ny-message.fade-out {
+            opacity: 0;
+        }
+
+        /* --- SLIDESHOW IMAGES --- */
+        .slide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 85%; 
+            max-height: 70vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border: 8px solid #fff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border-radius: 4px;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 2s ease-in-out; 
+        }
+
+        .slide.active {
+            opacity: 1;
+        }
+
+        /* --- IMAGE CAPTION --- */
+        #image-caption {
+            position: absolute;
+            bottom: 10%;
+            z-index: 20;
+            background: rgba(20, 20, 20, 0.85); 
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 25px 45px;
+            border-radius: 15px;
+            max-width: 40%;
+            font-size: 1.8rem;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            font-style: italic;
+            color: #fff;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+            opacity: 0;
+            transition: opacity 1s ease-in-out, transform 1s ease-in-out;
+            backdrop-filter: blur(10px);
+            line-height: 1.4;
+        }
+
+        #image-caption.active {
+            opacity: 1;
+        }
+
+        #image-caption.left {
+            left: 5%;
+            transform: translateX(0);
+        }
+
+        #image-caption.right {
+            right: 5%;
+            left: auto;
+            transform: translateX(0);
+        }
+
+        @media (max-width: 768px) {
+            #image-caption {
+                max-width: 70%;
+                font-size: 1.2rem;
+                padding: 20px 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <h2 style="margin-bottom: 20px; color: #aaa;">Ready for the New Year?</h2>
+        <button id="start-btn" onclick="startExperience()">Click to Enter</button>
+    </div>
+
+    <audio id="ny-music" loop>
+        <source src="song.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="countdown-container">
+        <h1 id="headline">Countdown to New Year</h1>
+        <div id="timer">
+            <div class="time-box"><span id="days">00</span><div class="label">Days</div></div>
+            <div class="time-box"><span id="hours">00</span><div class="label">Hours</div></div>
+            <div class="time-box"><span id="minutes">00</span><div class="label">Minutes</div></div>
+            <div class="time-box"><span id="seconds">00</span><div class="label">Seconds</div></div>
+        </div>
+    </div>
+
+    <div id="celebration-container">
+        <h1 id="ny-message">Happy New Year!</h1>
+        <img class="slide" src="images/1.jpeg" alt="Memory">
+        <img class="slide" src="images/2.jpeg" alt="Memory">
+        <img class="slide" src="images/3.jpeg" alt="Memory">
+        <img class="slide" src="images/4.jpeg" alt="Memory">
+        <img class="slide" src="images/5.jpeg" alt="Memory">
+        <img class="slide" src="images/6.jpeg" alt="Memory">
+        <img class="slide" src="images/7.jpeg" alt="Memory">
+        <img class="slide" src="images/8.jpeg" alt="Memory">
+        <img class="slide" src="images/9.jpeg" alt="Memory">
+        <img class="slide" src="images/10.jpeg" alt="Memory">
+        <img class="slide" src="images/11.jpeg" alt="Memory">
+        <img class="slide" src="images/12.jpeg" alt="Memory">
+        <img class="slide" src="images/13.jpeg" alt="Memory">
+        <img class="slide" src="images/14.jpeg" alt="Memory">
+        <img class="slide" src="images/15.jpeg" alt="Memory">
+        <img class="slide" src="images/16.jpeg" alt="Memory">
+        <img class="slide" src="images/17.jpeg" alt="Memory">
+        <img class="slide" src="images/18.jpeg" alt="Memory">
+        <img class="slide" src="images/19.jpeg" alt="Memory">
+        <img class="slide" src="images/20.jpeg" alt="Memory">
+        <div id="image-caption"></div>
+    </div>
+
+    <script>
+        // CONFIGURATION
+        const nextYear = new Date().getFullYear() + 1;
+        const newYearTime = new Date(`January 01 ${nextYear} 00:00:00`);
+        
+        // ** SET TO TRUE TO TEST INSTANTLY **
+        const isTesting = true; 
+
+        // CAPTIONS FOR EACH IMAGE
+        const imageCaptions = [
+            "To my soulmate and better half and cooking partner",
+            "To the one I will share every moment with",
+            "To my forever partner",
+            "To the best part of my life",
+            "To my beauty",
+            "To the girl that gets the best out of me",
+            "To my princess",
+            "To the best car ride partner",
+            "To the artist that draws a smile on my face",
+            "To the sun that lights up my smile",
+            "To my lovely girl",
+            "To my baby",
+            "To my food partner",
+            "To the light in my nights",
+            "To the little girl that I fall in love with everyday",
+            "To the best part of every picture",
+            "To my wife",
+            "To the Toty that makes the sunset look dull in comparison to her",
+            "To the owner of my heart",
+            "Ti amo moltissimo amore mio happy new year"
+        ];
+
+        // Elements
+        const startScreen = document.getElementById('start-screen');
+        const countdownContainer = document.getElementById('countdown-container');
+        const celebrationContainer = document.getElementById('celebration-container');
+        const audio = document.getElementById('ny-music');
+        const slides = document.querySelectorAll('.slide');
+        const captionElement = document.getElementById('image-caption');
+        
+        let slideIndex = 0;
+        let timerInterval;
+        let isAudioPlaying = false;
+        
+        // Flag to stop confetti
+        let stopConfetti = false;
+
+        // 1. START EXPERIENCE
+        function startExperience() {
+            startScreen.style.display = 'none';
+            countdownContainer.style.display = 'block';
+
+            timerInterval = setInterval(updateCountdown, 1000);
+            updateCountdown(); 
+
+            audio.volume = 0.7;
+            audio.play().then(() => {
+                isAudioPlaying = true;
+            }).catch(error => {
+                console.error("Audio play failed:", error);
+            });
+        }
+
+        // 2. COUNTDOWN LOGIC
+        function updateCountdown() {
+            const currentTime = new Date();
+            const diff = newYearTime - currentTime;
+
+            if (diff < 0 || isTesting) {
+                launchNewYear();
+                return;
+            }
+
+            const d = Math.floor(diff / 1000 / 60 / 60 / 24);
+            const h = Math.floor(diff / 1000 / 60 / 60) % 24;
+            const m = Math.floor(diff / 1000 / 60) % 60;
+            const s = Math.floor(diff / 1000) % 60;
+
+            document.getElementById('days').innerText = d < 10 ? '0' + d : d;
+            document.getElementById('hours').innerText = h < 10 ? '0' + h : h;
+            document.getElementById('minutes').innerText = m < 10 ? '0' + m : m;
+            document.getElementById('seconds').innerText = s < 10 ? '0' + s : s;
+        }
+
+        // 3. LAUNCH CELEBRATION
+        function launchNewYear() {
+            clearInterval(timerInterval);
+            
+            countdownContainer.style.display = 'none';
+            celebrationContainer.style.display = 'block';
+
+            if (!isAudioPlaying) {
+                audio.currentTime = 0;
+                audio.play();
+            }
+
+            if (typeof confetti === 'function') {
+                startConfetti();
+            }
+
+            // 10-Second Delay before fading out message and starting slides
+            setTimeout(() => {
+                document.getElementById('ny-message').classList.add('fade-out');
+                setTimeout(() => {
+                    startSlideshow();
+                }, 2000); 
+            }, 10000); 
+        }
+
+        function startSlideshow() {
+            if(slides.length === 0) return;
+
+            // --- STOP CONFETTI HERE ---
+            stopConfetti = true; 
+            
+            // 1. Show the first slide immediately
+            updateCaptionText(slideIndex);
+            slides[slideIndex].classList.add('active');
+            captionElement.classList.add('active');
+            
+            // 2. Start the interval loop
+            setInterval(() => {
+                // A. Fade OUT the current Caption first
+                captionElement.classList.remove('active');
+
+                // B. Wait 1 second (allows caption to fade out completely), then swap
+                setTimeout(() => {
+                    // Remove old image
+                    slides[slideIndex].classList.remove('active');
+                    
+                    // Increment Index
+                    slideIndex = (slideIndex + 1) % slides.length;
+                    
+                    // Update the caption text (while it is invisible)
+                    updateCaptionText(slideIndex);
+                    
+                    // Fade IN new image and new caption together
+                    slides[slideIndex].classList.add('active');
+                    captionElement.classList.add('active');
+
+                }, 1000); // 1000ms delay matches the caption CSS transition time
+
+            }, 10000); 
+        }
+
+        function updateCaptionText(index) {
+            captionElement.textContent = imageCaptions[index];
+            
+            if (index % 2 === 0) {
+                captionElement.classList.add('left');
+                captionElement.classList.remove('right');
+            } else {
+                captionElement.classList.add('right');
+                captionElement.classList.remove('left');
+            }
+        }
+
+        function startConfetti() {
+            // Reset the flag just in case
+            stopConfetti = false;
+
+            (function frame() {
+                // Check if we should stop
+                if (stopConfetti) return;
+
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 } });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 } });
+                requestAnimationFrame(frame);
+            }());
+        }
+    </script>
+</body>
+</html>
